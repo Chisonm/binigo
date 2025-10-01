@@ -456,7 +456,11 @@ func writeFile(path, content string) {
 }
 
 func serve(args []string) {
-	port := "8080"
+	port := os.Getenv("APP_PORT")
+	if port == "" {
+		port = "8000"
+	}
+
 	if len(args) > 0 {
 		port = strings.TrimPrefix(args[0], ":")
 	}
