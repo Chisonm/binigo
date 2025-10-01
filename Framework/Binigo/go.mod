@@ -1,4 +1,4 @@
-module github.com/chisonm/binigo
+module github.com/Chisonm/binigo
 
 go 1.24.0
 
