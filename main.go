@@ -603,11 +603,33 @@ func makeMigration(name string) {
 		os.Exit(1)
 	}
 
+	// Normalize migration name
+	migrationName := strings.ToLower(strings.ReplaceAll(name, " ", "_"))
+
+	// Check for existing migration with same name
+	files, err := os.ReadDir("database/migrations")
+	if err != nil {
+		fmt.Printf("❌ Failed to read migrations directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+		// Check if filename ends with _<migration_name>.go
+		if strings.HasSuffix(file.Name(), "_"+migrationName+".go") {
+			fmt.Printf("❌ Error: Migration '%s' already exists: %s\n", name, file.Name())
+			fmt.Println("   Use a different name or delete the existing migration")
+			os.Exit(1)
+		}
+	}
+
 	// Generate timestamp
 	timestamp := time.Now().Format("20060102150405")
 
 	// Create filename
-	filename := fmt.Sprintf("database/migrations/%s_%s.go", timestamp, strings.ToLower(strings.ReplaceAll(name, " ", "_")))
+	filename := fmt.Sprintf("database/migrations/%s_%s.go", timestamp, migrationName)
 
 	// Migration template
 	content := fmt.Sprintf(`package migrations
