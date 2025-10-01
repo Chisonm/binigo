@@ -175,7 +175,7 @@ func main() {
 	cfg := config.Load()
 
 	// Bootstrap application
-	app := binigo.New(cfg)
+	app := binigo.NewApplication(cfg)
 
 	// Register routes
 	routes.Register(app)

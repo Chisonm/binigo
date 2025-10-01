@@ -175,7 +175,7 @@ func main() {
 	cfg := config.Load()
 
 	// Bootstrap application
-	app := binigo.New(cfg)
+	app := binigo.NewApplication(cfg)
 
 	// Register routes
 	routes.Register(app)
@@ -460,7 +460,11 @@ func writeFile(path, content string) {
 }
 
 func serve(args []string) {
-	port := "8080"
+	port := os.Getenv("APP_PORT")
+	if port == "" {
+		port = "8080"
+	}
+
 	if len(args) > 0 {
 		port = strings.TrimPrefix(args[0], ":")
 	}
