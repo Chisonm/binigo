@@ -209,7 +209,6 @@ func createConfigFile(projectName string) {
 	content := `package config
 
 import (
-	"log"
 	"os"
 
 	"github.com/joho/godotenv"
