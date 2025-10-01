@@ -41,16 +41,16 @@ func (r *Router) Add(method, path string, handler HandlerFunc) *Route {
 		handler:    handler,
 		middleware: make([]MiddlewareFunc, 0),
 	}
-	
+
 	// Compile route pattern
 	route.compile()
-	
+
 	// Store route
 	if r.routes[route.method] == nil {
 		r.routes[route.method] = make([]*Route, 0)
 	}
 	r.routes[route.method] = append(r.routes[route.method], route)
-	
+
 	return route
 }
 
@@ -64,14 +64,14 @@ func (route *Route) compile() {
 		route.paramNames = append(route.paramNames, paramName)
 		return `([^/]+)`
 	})
-	
+
 	// Convert Laravel-style {param?} optional parameters
 	pattern = regexp.MustCompile(`\{(\w+)\?\}`).ReplaceAllStringFunc(pattern, func(match string) string {
 		paramName := strings.Trim(match, "{?}")
 		route.paramNames = append(route.paramNames, paramName)
 		return `(?:([^/]+))?`
 	})
-	
+
 	// Compile the pattern
 	pattern = "^" + pattern + "$"
 	route.pattern = regexp.MustCompile(pattern)
@@ -95,53 +95,53 @@ func (route *Route) Match(path string) (bool, map[string]string) {
 	if matches == nil {
 		return false, nil
 	}
-	
+
 	params := make(map[string]string)
 	for i, name := range route.paramNames {
 		if i+1 < len(matches) && matches[i+1] != "" {
 			params[name] = matches[i+1]
 		}
 	}
-	
+
 	return true, params
 }
 
 // Handle processes the incoming request
 func (r *Router) Handle(ctx *Context) error {
-	method := string(ctx.fastCtx.Method())
-	path := string(ctx.fastCtx.Path())
-	
+	methodBytes := ctx.fastCtx.Method()
+	pathBytes := ctx.fastCtx.Path()
+
 	// Find matching route
-	routes, ok := r.routes[method]
+	routes, ok := r.routes[string(methodBytes)]
 	if !ok {
 		return ctx.Status(404).JSON(Map{
 			"error": "Not Found",
 		})
 	}
-	
+
 	for _, route := range routes {
-		if matched, params := route.Match(path); matched {
+		if matched, params := route.Match(string(pathBytes)); matched {
 			// Set route parameters
 			ctx.params = params
 			ctx.route = route
-			
+
 			// Build handler with route middleware
 			handler := route.handler
-			
+
 			// Apply route-specific middleware
 			for i := len(route.middleware) - 1; i >= 0; i-- {
 				handler = route.middleware[i](handler)
 			}
-			
+
 			// Apply router group middleware
 			for i := len(r.middleware) - 1; i >= 0; i-- {
 				handler = r.middleware[i](handler)
 			}
-			
+
 			return handler(ctx)
 		}
 	}
-	
+
 	return ctx.Status(404).JSON(Map{
 		"error": "Not Found",
 	})
@@ -155,7 +155,7 @@ func (r *Router) Group(prefix string, fn func(router *Router)) *Router {
 		prefix:     r.prefix + prefix,
 		parent:     r,
 	}
-	
+
 	fn(group)
 	return group
 }
@@ -194,37 +194,37 @@ func (r *Router) Options(path string, handler HandlerFunc) *Route {
 // Resource creates RESTful routes for a resource
 func (r *Router) Resource(name string, controller interface{}) {
 	basePath := "/" + name
-	
+
 	// Index - GET /resource
 	r.Get(basePath, func(ctx *Context) error {
 		return fmt.Errorf("index not implemented")
 	}).Name(name + ".index")
-	
+
 	// Create - GET /resource/create
 	r.Get(basePath+"/create", func(ctx *Context) error {
 		return fmt.Errorf("create not implemented")
 	}).Name(name + ".create")
-	
+
 	// Store - POST /resource
 	r.Post(basePath, func(ctx *Context) error {
 		return fmt.Errorf("store not implemented")
 	}).Name(name + ".store")
-	
+
 	// Show - GET /resource/{id}
 	r.Get(basePath+"/{id}", func(ctx *Context) error {
 		return fmt.Errorf("show not implemented")
 	}).Name(name + ".show")
-	
+
 	// Edit - GET /resource/{id}/edit
 	r.Get(basePath+"/{id}/edit", func(ctx *Context) error {
 		return fmt.Errorf("edit not implemented")
 	}).Name(name + ".edit")
-	
+
 	// Update - PUT/PATCH /resource/{id}
 	r.Put(basePath+"/{id}", func(ctx *Context) error {
 		return fmt.Errorf("update not implemented")
 	}).Name(name + ".update")
-	
+
 	// Destroy - DELETE /resource/{id}
 	r.Delete(basePath+"/{id}", func(ctx *Context) error {
 		return fmt.Errorf("destroy not implemented")

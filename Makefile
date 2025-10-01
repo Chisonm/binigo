@@ -26,7 +26,7 @@ dev: ## Run in development mode with hot reload
 
 install-dev-tools: ## Install development tools
 	@echo "$(GREEN)Installing development tools...$(NC)"
-	$(GO) install github.com/cosmtrek/air@latest
+	$(GO) install github.com/air-verse/air@latest
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	$(GO) install golang.org/x/tools/cmd/goimports@latest
 

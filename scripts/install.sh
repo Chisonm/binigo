@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Binigo Framework Installer
-# Install with: curl -sSL https://raw.githubusercontent.com/yourusername/binigo/main/install.sh | bash
+# Install with: curl -sSL https://raw.githubusercontent.com/Chisonm/binigo/main/install.sh | bash
 
 set -e
 
@@ -36,7 +36,7 @@ mkdir -p "$BIN_DIR"
 
 # Download and install binigo CLI
 echo "📦 Installing Binigo CLI..."
-go install github.com/yourusername/binigo/cmd/binigo@latest
+go install github.com/Chisonm/binigo/cmd/binigo@latest
 
 # Check if installation was successful
 if [ $? -eq 0 ]; then
@@ -80,6 +80,6 @@ echo ""
 echo "   3. Start development server:"
 echo "      binigo serve"
 echo ""
-echo "📖 Documentation: https://github.com/yourusername/binigo"
-echo "💬 Community: https://github.com/yourusername/binigo/discussions"
+echo "📖 Documentation: https://github.com/Chisonm/binigo"
+echo "💬 Community: https://github.com/Chisonm/binigo/discussions"
 echo ""

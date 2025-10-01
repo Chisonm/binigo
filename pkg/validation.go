@@ -27,14 +27,14 @@ func NewValidator(data map[string]interface{}, rules map[string][]string) *Valid
 func (v *Validator) Validate() bool {
 	for field, fieldRules := range v.rules {
 		value := v.data[field]
-		
+
 		for _, rule := range fieldRules {
 			if !v.validateRule(field, value, rule) {
 				break // Stop on first error for this field
 			}
 		}
 	}
-	
+
 	return len(v.errors) == 0
 }
 
@@ -46,7 +46,7 @@ func (v *Validator) validateRule(field string, value interface{}, rule string) b
 	if len(parts) > 1 {
 		ruleValue = parts[1]
 	}
-	
+
 	switch ruleName {
 	case "required":
 		return v.validateRequired(field, value)
@@ -91,13 +91,13 @@ func (v *Validator) validateRequired(field string, value interface{}) bool {
 		v.addError(field, fmt.Sprintf("The %s field is required", field))
 		return false
 	}
-	
+
 	str, ok := value.(string)
 	if ok && strings.TrimSpace(str) == "" {
 		v.addError(field, fmt.Sprintf("The %s field is required", field))
 		return false
 	}
-	
+
 	return true
 }
 
@@ -107,13 +107,13 @@ func (v *Validator) validateEmail(field string, value interface{}) bool {
 		v.addError(field, fmt.Sprintf("The %s must be a valid email address", field))
 		return false
 	}
-	
+
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
 	if !emailRegex.MatchString(str) {
 		v.addError(field, fmt.Sprintf("The %s must be a valid email address", field))
 		return false
 	}
-	
+
 	return true
 }
 
@@ -122,12 +122,12 @@ func (v *Validator) validateMin(field string, value interface{}, min int) bool {
 	if !ok {
 		return true
 	}
-	
+
 	if len(str) < min {
 		v.addError(field, fmt.Sprintf("The %s must be at least %d characters", field, min))
 		return false
 	}
-	
+
 	return true
 }
 
@@ -136,22 +136,21 @@ func (v *Validator) validateMax(field string, value interface{}, max int) bool {
 	if !ok {
 		return true
 	}
-	
+
 	if len(str) > max {
 		v.addError(field, fmt.Sprintf("The %s must not exceed %d characters", field, max))
 		return false
 	}
-	
+
 	return true
 }
 
 func (v *Validator) validateNumeric(field string, value interface{}) bool {
-	switch value.(type) {
+	switch val := value.(type) {
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
 		return true
 	case string:
-		str := value.(string)
-		if _, err := strconv.ParseFloat(str, 64); err != nil {
+		if _, err := strconv.ParseFloat(val, 64); err != nil {
 			v.addError(field, fmt.Sprintf("The %s must be numeric", field))
 			return false
 		}
@@ -168,13 +167,13 @@ func (v *Validator) validateAlpha(field string, value interface{}) bool {
 		v.addError(field, fmt.Sprintf("The %s must contain only letters", field))
 		return false
 	}
-	
+
 	alphaRegex := regexp.MustCompile(`^[a-zA-Z]+$`)
 	if !alphaRegex.MatchString(str) {
 		v.addError(field, fmt.Sprintf("The %s must contain only letters", field))
 		return false
 	}
-	
+
 	return true
 }
 
@@ -184,13 +183,13 @@ func (v *Validator) validateAlphaNum(field string, value interface{}) bool {
 		v.addError(field, fmt.Sprintf("The %s must contain only letters and numbers", field))
 		return false
 	}
-	
+
 	alphaNumRegex := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	if !alphaNumRegex.MatchString(str) {
 		v.addError(field, fmt.Sprintf("The %s must contain only letters and numbers", field))
 		return false
 	}
-	
+
 	return true
 }
 
@@ -200,13 +199,13 @@ func (v *Validator) validateIn(field string, value interface{}, allowedValues []
 		v.addError(field, fmt.Sprintf("The %s is invalid", field))
 		return false
 	}
-	
+
 	for _, allowed := range allowedValues {
 		if str == strings.TrimSpace(allowed) {
 			return true
 		}
 	}
-	
+
 	v.addError(field, fmt.Sprintf("The %s must be one of: %s", field, strings.Join(allowedValues, ", ")))
 	return false
 }
@@ -214,12 +213,12 @@ func (v *Validator) validateIn(field string, value interface{}, allowedValues []
 func (v *Validator) validateConfirmed(field string, value interface{}) bool {
 	confirmField := field + "_confirmation"
 	confirmValue := v.data[confirmField]
-	
+
 	if value != confirmValue {
 		v.addError(field, fmt.Sprintf("The %s confirmation does not match", field))
 		return false
 	}
-	
+
 	return true
 }
 
@@ -229,13 +228,13 @@ func (v *Validator) validateURL(field string, value interface{}) bool {
 		v.addError(field, fmt.Sprintf("The %s must be a valid URL", field))
 		return false
 	}
-	
+
 	urlRegex := regexp.MustCompile(`^https?://[^\s/$.?#].[^\s]*$`)
 	if !urlRegex.MatchString(str) {
 		v.addError(field, fmt.Sprintf("The %s must be a valid URL", field))
 		return false
 	}
-	
+
 	return true
 }
 
@@ -245,17 +244,17 @@ func (v *Validator) validateRegex(field string, value interface{}, pattern strin
 		v.addError(field, fmt.Sprintf("The %s format is invalid", field))
 		return false
 	}
-	
+
 	regex, err := regexp.Compile(pattern)
 	if err != nil {
 		return true // Invalid regex pattern, skip
 	}
-	
+
 	if !regex.MatchString(str) {
 		v.addError(field, fmt.Sprintf("The %s format is invalid", field))
 		return false
 	}
-	
+
 	return true
 }
 
@@ -293,10 +292,10 @@ func (c *Context) ValidateJSON(rules map[string][]string) (*Validator, error) {
 	if err := c.Bind(&data); err != nil {
 		return nil, err
 	}
-	
+
 	validator := NewValidator(data, rules)
 	validator.Validate()
-	
+
 	return validator, nil
 }
 
@@ -306,7 +305,7 @@ func (c *Context) ValidateRequest(rules map[string][]string) error {
 	if err != nil {
 		return c.Error("Invalid JSON", 400)
 	}
-	
+
 	if validator.HasErrors() {
 		return c.Status(422).JSON(Map{
 			"success": false,
@@ -314,7 +313,7 @@ func (c *Context) ValidateRequest(rules map[string][]string) error {
 			"errors":  validator.Errors(),
 		})
 	}
-	
+
 	return nil
 }
 
@@ -328,11 +327,11 @@ func (uc *UserController) Store(ctx *framework.Context) error {
 		"age":      {"numeric", "min:18"},
 		"role":     {"in:admin,user,guest"},
 	}
-	
+
 	if err := ctx.ValidateRequest(rules); err != nil {
 		return err
 	}
-	
+
 	// Continue with valid data...
 }
 */

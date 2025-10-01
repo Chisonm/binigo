@@ -60,11 +60,11 @@ func (c *Context) Input(name string) interface{} {
 // Bind binds request body to a struct
 func (c *Context) Bind(v interface{}) error {
 	contentType := string(c.fastCtx.Request.Header.ContentType())
-	
+
 	if contentType == "application/json" || len(contentType) == 0 {
 		return json.Unmarshal(c.fastCtx.PostBody(), v)
 	}
-	
+
 	return fmt.Errorf("unsupported content type: %s", contentType)
 }
 
@@ -113,12 +113,12 @@ func (c *Context) Status(code int) *Context {
 // JSON sends JSON response
 func (c *Context) JSON(data interface{}) error {
 	c.fastCtx.Response.Header.SetContentType("application/json")
-	
+
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
-	
+
 	c.fastCtx.SetBody(jsonData)
 	return nil
 }
@@ -158,11 +158,11 @@ func (c *Context) Cookie(name, value string, maxAge ...int) *Context {
 	cookie := &fasthttp.Cookie{}
 	cookie.SetKey(name)
 	cookie.SetValue(value)
-	
+
 	if len(maxAge) > 0 {
 		cookie.SetMaxAge(maxAge[0])
 	}
-	
+
 	c.fastCtx.Response.Header.SetCookie(cookie)
 	return c
 }
@@ -247,11 +247,11 @@ func (c *Context) Success(data interface{}, message ...string) error {
 		"success": true,
 		"data":    data,
 	}
-	
+
 	if len(message) > 0 {
 		response["message"] = message[0]
 	}
-	
+
 	return c.JSON(response)
 }
 
@@ -261,7 +261,7 @@ func (c *Context) Error(message string, code ...int) error {
 	if len(code) > 0 {
 		statusCode = code[0]
 	}
-	
+
 	c.Status(statusCode)
 	return c.JSON(Map{
 		"success": false,

@@ -95,10 +95,10 @@ EXAMPLES:
     binigo migrate
 
 DOCUMENTATION:
-    https://github.com/yourusername/binigo
+    https://github.com/Chisonm/binigo
 
 COMMUNITY:
-    https://github.com/yourusername/binigo/discussions
+    https://github.com/Chisonm/binigo/discussions
 `
 	fmt.Printf(help, version)
 }
@@ -163,11 +163,11 @@ func createMainFile(projectName string) {
 
 import (
 	"log"
-	"%s/app/controllers"
-	"%s/config"
-	"%s/routes"
+	"%[1]s/app/controllers"
+	"%[1]s/config"
+	"%[1]s/routes"
 
-	"github.com/yourusername/binigo"
+	"github.com/Chisonm/binigo"
 )
 
 func main() {
@@ -181,13 +181,13 @@ func main() {
 	routes.Register(app)
 
 	// Start server
-	log.Printf("🚀 Server starting on :%s", cfg.Port)
+	log.Printf("🚀 Server starting on :%%s", cfg.Port)
 	if err := app.Run(":" + cfg.Port); err != nil {
 		log.Fatal("❌ Server error:", err)
 	}
 }
 `
-	content = fmt.Sprintf(content, projectName, projectName, projectName)
+	content = fmt.Sprintf(content, projectName)
 	writeFile(filepath.Join(projectName, "main.go"), content)
 }
 
@@ -197,7 +197,7 @@ func createGoModFile(projectName string) {
 go 1.21
 
 require (
-	github.com/yourusername/binigo v1.0.0
+	github.com/Chisonm/binigo v1.0.0
 	github.com/joho/godotenv v1.5.1
 )
 `
@@ -213,7 +213,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/yourusername/binigo"
+	"github.com/Chisonm/binigo"
 )
 
 func Load() *binigo.Config {
@@ -270,7 +270,7 @@ func createRoutesFile(projectName string) {
 	content := `package routes
 
 import (
-	"github.com/yourusername/binigo"
+	"github.com/Chisonm/binigo"
 	"%s/app/controllers"
 )
 
@@ -306,7 +306,7 @@ func Register(app *binigo.Application) {
 func createExampleController(projectName string) {
 	content := `package controllers
 
-import "github.com/yourusername/binigo"
+import "github.com/Chisonm/binigo"
 
 type HelloController struct{}
 
@@ -379,7 +379,7 @@ storage/uploads/*
 func createReadme(projectName string) {
 	content := `# %s
 
-A web application built with [Binigo Framework](https://github.com/yourusername/binigo).
+A web application built with [Binigo Framework](https://github.com/Chisonm/binigo).
 
 ## Getting Started
 
@@ -441,7 +441,7 @@ binigo route:list               # List all routes
 
 ## Documentation
 
-Visit [Binigo Documentation](https://github.com/yourusername/binigo) for more information.
+Visit [Binigo Documentation](https://github.com/Chisonm/binigo) for more information.
 
 ## License
 
@@ -487,7 +487,7 @@ func makeController(name string) {
 
 	tmpl := `package controllers
 
-import "github.com/yourusername/binigo"
+import "github.com/Chisonm/binigo"
 
 type {{.Name}} struct {
 	// DB *binigo.DB ` + "`inject:\"db\"`" + `

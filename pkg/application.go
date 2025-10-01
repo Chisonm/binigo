@@ -24,10 +24,10 @@ func NewApplication(config *Config) *Application {
 		middleware: make([]MiddlewareFunc, 0),
 		config:     config,
 	}
-	
+
 	// Register core services
 	app.registerCoreServices()
-	
+
 	return app
 }
 
@@ -36,11 +36,11 @@ func (a *Application) registerCoreServices() {
 	a.container.Singleton("app", func(c *Container) interface{} {
 		return a
 	})
-	
+
 	a.container.Singleton("router", func(c *Container) interface{} {
 		return a.router
 	})
-	
+
 	a.container.Singleton("config", func(c *Container) interface{} {
 		return a.config
 	})
@@ -66,7 +66,7 @@ func (a *Application) Container() *Container {
 // Run starts the HTTP server
 func (a *Application) Run(addr string) error {
 	handler := a.buildHandler()
-	
+
 	log.Printf("Server starting on %s", addr)
 	return fasthttp.ListenAndServe(addr, handler)
 }
@@ -76,17 +76,20 @@ func (a *Application) buildHandler() fasthttp.RequestHandler {
 	return func(ctx *fasthttp.RequestCtx) {
 		// Create framework context
 		fctx := NewContext(ctx, a)
-		
+
 		// Build middleware chain
 		handler := a.router.Handle
-		
+
 		// Apply middleware in reverse order
 		for i := len(a.middleware) - 1; i >= 0; i-- {
 			handler = a.middleware[i](handler)
 		}
-		
+
 		// Execute handler chain
-		handler(fctx)
+		if err := handler(fctx); err != nil {
+			// Error already handled by handler
+			_ = err
+		}
 	}
 }
 
@@ -124,11 +127,11 @@ func (a *Application) Options(path string, handler HandlerFunc) *Route {
 func (a *Application) Any(path string, handler HandlerFunc) []*Route {
 	methods := []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"}
 	routes := make([]*Route, len(methods))
-	
+
 	for i, method := range methods {
 		routes[i] = a.router.Add(method, path, handler)
 	}
-	
+
 	return routes
 }
 
@@ -173,10 +176,10 @@ func LoadConfig() *Config {
 func Bootstrap() *Application {
 	config := LoadConfig()
 	app := NewApplication(config)
-	
+
 	// Add default middleware
 	app.Use(RecoveryMiddleware())
 	app.Use(LoggerMiddleware())
-	
+
 	return app
 }

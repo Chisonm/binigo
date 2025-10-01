@@ -5,7 +5,7 @@ A Laravel-inspired web framework for Go built on FastHTTP.
 ## Installation
 
 ```bash
-go install github.com/chisonm/binigo/cmd/binigo@latest
+go install github.com/Chisonm/binigo/cmd/binigo@latest
 ```
 
 ## Quick Start
