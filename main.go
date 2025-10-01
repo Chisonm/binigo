@@ -56,6 +56,10 @@ func main() {
 		makeMigration(os.Args[2])
 	case "migrate":
 		migrate()
+	case "migrate:rollback":
+		migrateRollback()
+	case "migrate:reset":
+		migrateReset()
 	case "route:list":
 		listRoutes()
 	case "version", "-v", "--version":
@@ -84,6 +88,8 @@ COMMANDS:
     make:middleware <name>  Generate a new middleware
     make:migration <name>   Generate a new migration
     migrate                 Run database migrations
+    migrate:rollback        Rollback the last migration
+    migrate:reset           Rollback all migrations
     route:list              List all registered routes
     version                 Show Binigo version
     help                    Show this help message
@@ -589,13 +595,134 @@ func makeMiddleware(name string) {
 }
 
 func makeMigration(name string) {
-	// Create migration file
-	fmt.Printf("✅ Migration %s created\n", name)
+	// Check if we're in a project directory
+	if _, err := os.Stat("database/migrations"); os.IsNotExist(err) {
+		fmt.Println("❌ Error: database/migrations directory not found")
+		fmt.Println("   Make sure you're in a Binigo project directory")
+		os.Exit(1)
+	}
+
+	// Generate timestamp
+	timestamp := time.Now().Format("20060102150405")
+
+	// Create filename
+	filename := fmt.Sprintf("database/migrations/%s_%s.go", timestamp, strings.ToLower(strings.ReplaceAll(name, " ", "_")))
+
+	// Migration template
+	content := fmt.Sprintf(`package migrations
+
+import (
+	"database/sql"
+)
+
+// %s migration
+type Migration%s struct{}
+
+// Up runs the migration
+func (m *Migration%s) Up(db *sql.DB) error {
+	query := ` + "`" + `
+		CREATE TABLE IF NOT EXISTS example (
+			id SERIAL PRIMARY KEY,
+			name VARCHAR(255) NOT NULL,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+	` + "`" + `
+
+	_, err := db.Exec(query)
+	return err
+}
+
+// Down rolls back the migration
+func (m *Migration%s) Down(db *sql.DB) error {
+	query := ` + "`" + `DROP TABLE IF EXISTS example;` + "`" + `
+
+	_, err := db.Exec(query)
+	return err
+}
+
+// Name returns the migration name
+func (m *Migration%s) Name() string {
+	return "%s_%s"
+}
+`, name, timestamp, timestamp, timestamp, timestamp, timestamp, name)
+
+	// Write file
+	if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
+		fmt.Printf("❌ Failed to create migration: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("✅ Migration created: %s\n", filename)
+	fmt.Println("   Edit the Up() and Down() methods with your database changes")
 }
 
 func migrate() {
 	fmt.Println("🔄 Running migrations...")
+
+	// Check if we're in a project directory
+	if _, err := os.Stat("database/migrations"); os.IsNotExist(err) {
+		fmt.Println("❌ Error: database/migrations directory not found")
+		fmt.Println("   Make sure you're in a Binigo project directory")
+		os.Exit(1)
+	}
+
+	// This will run go run on all migration files
+	cmd := exec.Command("go", "run", "main.go", "db:migrate")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("❌ Migration failed: %v\n", err)
+		fmt.Println("   Note: You need to implement the migration runner in your main.go")
+		os.Exit(1)
+	}
+
 	fmt.Println("✅ Migrations completed successfully")
+}
+
+func migrateRollback() {
+	fmt.Println("🔄 Rolling back last migration...")
+
+	// Check if we're in a project directory
+	if _, err := os.Stat("database/migrations"); os.IsNotExist(err) {
+		fmt.Println("❌ Error: database/migrations directory not found")
+		fmt.Println("   Make sure you're in a Binigo project directory")
+		os.Exit(1)
+	}
+
+	cmd := exec.Command("go", "run", "main.go", "db:rollback")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("❌ Rollback failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("✅ Rollback completed successfully")
+}
+
+func migrateReset() {
+	fmt.Println("🔄 Resetting all migrations...")
+
+	// Check if we're in a project directory
+	if _, err := os.Stat("database/migrations"); os.IsNotExist(err) {
+		fmt.Println("❌ Error: database/migrations directory not found")
+		fmt.Println("   Make sure you're in a Binigo project directory")
+		os.Exit(1)
+	}
+
+	cmd := exec.Command("go", "run", "main.go", "db:reset")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("❌ Reset failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("✅ Reset completed successfully")
 }
 
 func listRoutes() {
