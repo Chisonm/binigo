@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/joho/godotenv"
 )
 
 const version = "1.0.0"
@@ -456,23 +458,27 @@ func writeFile(path, content string) {
 }
 
 func serve(args []string) {
+	// Load .env file to get the actual port that will be used
+	_ = godotenv.Load()
+
 	cmd := exec.Command("go", "run", "main.go")
 	cmd.Env = os.Environ()
 
-	// Only override port if explicitly provided via command line
+	// Determine which port will be used
+	var port string
 	if len(args) > 0 {
-		port := strings.TrimPrefix(args[0], ":")
+		// Command line argument takes highest priority
+		port = strings.TrimPrefix(args[0], ":")
 		cmd.Env = append(cmd.Env, fmt.Sprintf("APP_PORT=%s", port))
-		fmt.Printf("🚀 Starting development server on http://localhost:%s\n", port)
 	} else {
-		// Display message with port from .env or default
-		port := os.Getenv("APP_PORT")
+		// Use port from .env or default
+		port = os.Getenv("APP_PORT")
 		if port == "" {
 			port = "8000"
 		}
-		fmt.Printf("🚀 Starting development server on http://localhost:%s\n", port)
 	}
 
+	fmt.Printf("🚀 Starting development server on http://localhost:%s\n", port)
 	fmt.Println("Press Ctrl+C to stop")
 	fmt.Println("")
 
