@@ -163,7 +163,6 @@ func createMainFile(projectName string) {
 
 import (
 	"log"
-	"%[1]s/app/controllers"
 	"%[1]s/config"
 	"%[1]s/routes"
 
