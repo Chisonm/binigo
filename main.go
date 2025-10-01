@@ -144,6 +144,7 @@ func createProject(name string) {
 	createGitignore(name)
 	createReadme(name)
 	createExampleController(name)
+	createLogGitkeep(name)
 
 	// Initialize go module
 	fmt.Println("📦 Initializing Go module...")
@@ -177,6 +178,10 @@ func main() {
 
 	// Bootstrap application
 	app := binigo.NewApplication(cfg)
+
+	// Register global middleware
+	app.Use(binigo.LoggerMiddleware())
+	app.Use(binigo.RecoveryMiddleware())
 
 	// Register routes
 	routes.Register(app)
@@ -608,4 +613,8 @@ func toSnakeCase(str string) string {
 		result.WriteRune(r)
 	}
 	return strings.ToLower(result.String())
+}
+
+func createLogGitkeep(projectName string) {
+	writeFile(filepath.Join(projectName, "storage", "logs", ".gitkeep"), "")
 }

@@ -2,20 +2,57 @@ package binigo
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"os"
+	"path/filepath"
 	"runtime/debug"
 	"strings"
 	"time"
 )
 
-// LoggerMiddleware logs incoming requests
+// ANSI color codes
+const (
+	ColorReset  = "\033[0m"
+	ColorRed    = "\033[31m"
+	ColorGreen  = "\033[32m"
+	ColorYellow = "\033[33m"
+	ColorBlue   = "\033[34m"
+	ColorCyan   = "\033[36m"
+	ColorWhite  = "\033[37m"
+	ColorGray   = "\033[90m"
+)
+
+// LoggerMiddleware logs incoming requests with colors and file logging
 func LoggerMiddleware() MiddlewareFunc {
+	// Setup file logger
+	logDir := "storage/logs"
+	os.MkdirAll(logDir, 0755)
+
+	logFile, err := os.OpenFile(
+		filepath.Join(logDir, "app.log"),
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		0644,
+	)
+	if err != nil {
+		log.Printf("Warning: Could not open log file: %v", err)
+	}
+
+	// Create multi-writer for both console and file
+	var writers []io.Writer
+	writers = append(writers, os.Stdout)
+	if logFile != nil {
+		writers = append(writers, logFile)
+	}
+	multiWriter := io.MultiWriter(writers...)
+
 	return func(next HandlerFunc) HandlerFunc {
 		return func(ctx *Context) error {
 			start := time.Now()
 
 			method := ctx.Method()
 			path := ctx.Path()
+			ip := ctx.IP()
 
 			// Process request
 			err := next(ctx)
@@ -24,10 +61,80 @@ func LoggerMiddleware() MiddlewareFunc {
 			duration := time.Since(start)
 			status := ctx.fastCtx.Response.StatusCode()
 
-			log.Printf("[%s] %s %d - %v", method, path, status, duration)
+			// Color code based on status
+			statusColor := getStatusColor(status)
+			methodColor := getMethodColor(method)
+
+			// Format timestamp
+			timestamp := time.Now().Format("2006/01/02 15:04:05")
+
+			// Console log (with colors)
+			consoleLog := fmt.Sprintf(
+				"%s[%s]%s %s%s%s %s%-7s%s %s%3d%s %s%-6v%s %s%s%s",
+				ColorGray, timestamp, ColorReset,
+				methodColor, method, ColorReset,
+				ColorCyan, ip, ColorReset,
+				statusColor, status, ColorReset,
+				ColorBlue, duration.Round(time.Millisecond), ColorReset,
+				ColorWhite, path, ColorReset,
+			)
+
+			// File log (without colors)
+			fileLog := fmt.Sprintf(
+				"[%s] %s %-7s %3d %-6v %s",
+				timestamp, method, ip, status, duration.Round(time.Millisecond), path,
+			)
+
+			// Log error if present
+			if err != nil {
+				consoleLog += fmt.Sprintf(" %sERROR: %v%s", ColorRed, err, ColorReset)
+				fileLog += fmt.Sprintf(" ERROR: %v", err)
+			}
+
+			// Write to console
+			fmt.Fprintln(os.Stdout, consoleLog)
+
+			// Write to file (without colors)
+			if logFile != nil {
+				fmt.Fprintln(logFile, fileLog)
+			}
 
 			return err
 		}
+	}
+}
+
+// getStatusColor returns color based on HTTP status code
+func getStatusColor(status int) string {
+	switch {
+	case status >= 200 && status < 300:
+		return ColorGreen
+	case status >= 300 && status < 400:
+		return ColorCyan
+	case status >= 400 && status < 500:
+		return ColorYellow
+	case status >= 500:
+		return ColorRed
+	default:
+		return ColorWhite
+	}
+}
+
+// getMethodColor returns color based on HTTP method
+func getMethodColor(method string) string {
+	switch method {
+	case "GET":
+		return ColorBlue
+	case "POST":
+		return ColorGreen
+	case "PUT":
+		return ColorYellow
+	case "DELETE":
+		return ColorRed
+	case "PATCH":
+		return ColorCyan
+	default:
+		return ColorWhite
 	}
 }
 
