@@ -167,7 +167,7 @@ import (
 	"%[1]s/config"
 	"%[1]s/routes"
 
-	"github.com/Chisonm/binigo"
+	binigo "github.com/Chisonm/binigo/pkg"
 )
 
 func main() {
@@ -213,7 +213,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/Chisonm/binigo"
+	binigo "github.com/Chisonm/binigo/pkg"
 )
 
 func Load() *binigo.Config {
@@ -270,7 +270,7 @@ func createRoutesFile(projectName string) {
 	content := `package routes
 
 import (
-	"github.com/Chisonm/binigo"
+	binigo "github.com/Chisonm/binigo/pkg"
 	"%s/app/controllers"
 )
 
@@ -306,7 +306,7 @@ func Register(app *binigo.Application) {
 func createExampleController(projectName string) {
 	content := `package controllers
 
-import "github.com/Chisonm/binigo"
+import binigo "github.com/Chisonm/binigo/pkg"
 
 type HelloController struct{}
 
@@ -487,7 +487,7 @@ func makeController(name string) {
 
 	tmpl := `package controllers
 
-import "github.com/Chisonm/binigo"
+import binigo "github.com/Chisonm/binigo/pkg"
 
 type {{.Name}} struct {
 	// DB *binigo.DB ` + "`inject:\"db\"`" + `
