@@ -94,9 +94,10 @@ func LoggerMiddleware() MiddlewareFunc {
 			// Write to console
 			fmt.Fprintln(os.Stdout, consoleLog)
 
-			// Write to file (without colors)
+			// Write to file (without colors) and flush immediately
 			if logFile != nil {
 				fmt.Fprintln(logFile, fileLog)
+				logFile.Sync() // Force flush to disk
 			}
 
 			return err
