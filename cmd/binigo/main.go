@@ -217,10 +217,8 @@ import (
 )
 
 func Load() *binigo.Config {
-	// Load .env file
-	if err := godotenv.Load(); err != nil {
-		log.Println("⚠️  No .env file found, using environment variables")
-	}
+	// Load .env file (won't override existing environment variables)
+	_ = godotenv.Load()
 
 	return &binigo.Config{
 		AppName:     getEnv("APP_NAME", "Binigo App"),
