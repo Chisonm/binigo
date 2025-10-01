@@ -57,7 +57,7 @@ func main() {
 	case "route:list":
 		listRoutes()
 	case "version", "-v", "--version":
-		fmt.Printf("Binigo Framework v%s\n", version)
+		fmt.Printf("Binigo Framework %s\n", version)
 	case "help", "-h", "--help":
 		printHelp()
 	default:
@@ -275,7 +275,7 @@ func Register(app *binigo.Application) {
 	app.Get("/", func(ctx *binigo.Context) error {
 		return ctx.JSON(binigo.Map{
 			"message": "Welcome to Binigo Framework!",
-			"version": "1.0.0",
+			"version": binigo.Version,
 		})
 	})
 

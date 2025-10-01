@@ -5,7 +5,7 @@ BINARY_NAME=binigo
 VERSION=$(shell git describe --tags --always --dirty)
 BUILD_DIR=./bin
 GO=go
-GOFLAGS=-ldflags "-X main.version=$(VERSION)"
+GOFLAGS=-ldflags "-X main.version=$(VERSION) -X github.com/Chisonm/binigo/pkg.Version=$(VERSION)"
 
 # Colors for terminal output
 RED=\033[0;31m

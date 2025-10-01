@@ -1,7 +1,7 @@
 package binigo
 
-// Version of the framework
-const Version = "1.0.0"
+// Version of the framework (set by build flags)
+var Version = "dev"
 
 // Map is a shorthand for map[string]interface{}
 type Map map[string]interface{}
