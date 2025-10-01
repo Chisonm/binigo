@@ -142,6 +142,50 @@ func (m *Migrator) Reset() error {
 	return nil
 }
 
+// Status shows the status of all migrations
+func (m *Migrator) Status() error {
+	// Create migrations table if it doesn't exist
+	if err := m.createMigrationsTable(); err != nil {
+		return fmt.Errorf("failed to create migrations table: %v", err)
+	}
+
+	// Get list of ran migrations
+	ran, err := m.getRanMigrations()
+	if err != nil {
+		return fmt.Errorf("failed to get ran migrations: %v", err)
+	}
+
+	ranMap := make(map[string]bool)
+	for _, r := range ran {
+		ranMap[r] = true
+	}
+
+	// Sort migrations by name (timestamp)
+	sort.Slice(m.migrations, func(i, j int) bool {
+		return m.migrations[i].Name() < m.migrations[j].Name()
+	})
+
+	// Print header
+	fmt.Println("Migration                                        | Status")
+	fmt.Println("------------------------------------------------+--------")
+
+	if len(m.migrations) == 0 {
+		fmt.Println("No migrations registered")
+		return nil
+	}
+
+	// Print each migration
+	for _, migration := range m.migrations {
+		status := "Pending"
+		if ranMap[migration.Name()] {
+			status = "✅ Ran"
+		}
+		fmt.Printf("%-48s | %s\n", migration.Name(), status)
+	}
+
+	return nil
+}
+
 // createMigrationsTable creates the migrations tracking table
 func (m *Migrator) createMigrationsTable() error {
 	query := `

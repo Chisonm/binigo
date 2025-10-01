@@ -620,9 +620,12 @@ import (
 type Migration%s struct{}
 
 // Up runs the migration
+// NOTE: Binigo tracks which migrations have run in the 'migrations' table.
+// Each migration only runs once, so you don't need IF NOT EXISTS checks.
+// Write your migration as if running on a fresh database.
 func (m *Migration%s) Up(db *sql.DB) error {
 	query := ` + "`" + `
-		CREATE TABLE IF NOT EXISTS example (
+		CREATE TABLE example (
 			id SERIAL PRIMARY KEY,
 			name VARCHAR(255) NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

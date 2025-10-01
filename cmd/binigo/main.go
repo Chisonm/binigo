@@ -62,6 +62,8 @@ func main() {
 		migrateRollback()
 	case "migrate:reset":
 		migrateReset()
+	case "migrate:status":
+		migrateStatus()
 	case "route:list":
 		listRoutes()
 	case "version", "-v", "--version":
@@ -92,6 +94,7 @@ COMMANDS:
     migrate                 Run database migrations
     migrate:rollback        Rollback the last migration
     migrate:reset           Rollback all migrations
+    migrate:status          Show migration status
     route:list              List all registered routes
     version                 Show Binigo version
     help                    Show this help message
@@ -187,9 +190,21 @@ import (
 
 func main() {
 	// Check for migration commands
-	if len(os.Args) > 1 && os.Args[1] == "db:migrate" {
-		runMigrations()
-		return
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "db:migrate":
+			runMigrations()
+			return
+		case "db:rollback":
+			rollbackMigration()
+			return
+		case "db:reset":
+			resetMigrations()
+			return
+		case "db:status":
+			migrationStatus()
+			return
+		}
 	}
 
 	// Load configuration
@@ -236,6 +251,54 @@ func runMigrations() {
 	// Run migrations
 	if err := migrator.Run(); err != nil {
 		log.Fatal("❌ Migration failed:", err)
+	}
+}
+
+func rollbackMigration() {
+	cfg := config.Load()
+	db, err := sql.Open("postgres", cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("❌ Database connection failed:", err)
+	}
+	defer db.Close()
+
+	migrator := binigo.NewMigrator(db)
+	migrations.Register(migrator)
+
+	if err := migrator.Rollback(); err != nil {
+		log.Fatal("❌ Rollback failed:", err)
+	}
+}
+
+func resetMigrations() {
+	cfg := config.Load()
+	db, err := sql.Open("postgres", cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("❌ Database connection failed:", err)
+	}
+	defer db.Close()
+
+	migrator := binigo.NewMigrator(db)
+	migrations.Register(migrator)
+
+	if err := migrator.Reset(); err != nil {
+		log.Fatal("❌ Reset failed:", err)
+	}
+}
+
+func migrationStatus() {
+	cfg := config.Load()
+	db, err := sql.Open("postgres", cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("❌ Database connection failed:", err)
+	}
+	defer db.Close()
+
+	migrator := binigo.NewMigrator(db)
+	migrations.Register(migrator)
+
+	if err := migrator.Status(); err != nil {
+		log.Fatal("❌ Status failed:", err)
 	}
 }
 `
@@ -670,9 +733,12 @@ import (
 type Migration%s struct{}
 
 // Up runs the migration
+// NOTE: Binigo tracks which migrations have run in the 'migrations' table.
+// Each migration only runs once, so you don't need IF NOT EXISTS checks.
+// Write your migration as if running on a fresh database.
 func (m *Migration%s) Up(db *sql.DB) error {
 	query := ` + "`" + `
-		CREATE TABLE IF NOT EXISTS example (
+		CREATE TABLE example (
 			id SERIAL PRIMARY KEY,
 			name VARCHAR(255) NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -774,6 +840,28 @@ func migrateReset() {
 	}
 
 	fmt.Println("✅ Reset completed successfully")
+}
+
+func migrateStatus() {
+	fmt.Println("📊 Migration Status")
+	fmt.Println()
+
+	// Check if we're in a project directory
+	if _, err := os.Stat("database/migrations"); os.IsNotExist(err) {
+		fmt.Println("❌ Error: database/migrations directory not found")
+		fmt.Println("   Make sure you're in a Binigo project directory")
+		os.Exit(1)
+	}
+
+	cmd := exec.Command("go", "run", "main.go", "db:status")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("❌ Failed to get status: %v\n", err)
+		fmt.Println("   Note: You need to implement the migration status in your main.go")
+		os.Exit(1)
+	}
 }
 
 func listRoutes() {
