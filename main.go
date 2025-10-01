@@ -456,21 +456,26 @@ func writeFile(path, content string) {
 }
 
 func serve(args []string) {
-	port := os.Getenv("APP_PORT")
-	if port == "" {
-		port = "8000"
-	}
+	cmd := exec.Command("go", "run", "main.go")
+	cmd.Env = os.Environ()
 
+	// Only override port if explicitly provided via command line
 	if len(args) > 0 {
-		port = strings.TrimPrefix(args[0], ":")
+		port := strings.TrimPrefix(args[0], ":")
+		cmd.Env = append(cmd.Env, fmt.Sprintf("APP_PORT=%s", port))
+		fmt.Printf("🚀 Starting development server on http://localhost:%s\n", port)
+	} else {
+		// Display message with port from .env or default
+		port := os.Getenv("APP_PORT")
+		if port == "" {
+			port = "8000"
+		}
+		fmt.Printf("🚀 Starting development server on http://localhost:%s\n", port)
 	}
 
-	fmt.Printf("🚀 Starting development server on http://localhost:%s\n", port)
 	fmt.Println("Press Ctrl+C to stop")
 	fmt.Println("")
 
-	cmd := exec.Command("go", "run", "main.go")
-	cmd.Env = append(os.Environ(), fmt.Sprintf("APP_PORT=%s", port))
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
