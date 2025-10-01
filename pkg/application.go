@@ -190,6 +190,7 @@ type Config struct {
 	Debug       bool
 	Port        string
 	Database    DatabaseConfig
+	DatabaseURL string
 }
 
 type DatabaseConfig struct {

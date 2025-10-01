@@ -153,6 +153,7 @@ func createProject(name string) {
 	createReadme(name)
 	createExampleController(name)
 	createLogGitkeep(name)
+	createMigrationsRegister(name)
 
 	// Initialize go module
 	fmt.Println("📦 Initializing Go module...")
@@ -173,14 +174,24 @@ func createMainFile(projectName string) {
 	content := `package main
 
 import (
+	"database/sql"
 	"log"
+	"os"
 	"%[1]s/config"
+	"%[1]s/database/migrations"
 	"%[1]s/routes"
 
 	binigo "github.com/Chisonm/binigo/pkg"
+	_ "github.com/lib/pq"
 )
 
 func main() {
+	// Check for migration commands
+	if len(os.Args) > 1 && os.Args[1] == "db:migrate" {
+		runMigrations()
+		return
+	}
+
 	// Load configuration
 	cfg := config.Load()
 
@@ -200,6 +211,33 @@ func main() {
 		log.Fatal("❌ Server error:", err)
 	}
 }
+
+func runMigrations() {
+	cfg := config.Load()
+
+	// Connect to database
+	db, err := sql.Open("postgres", cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal("❌ Database connection failed:", err)
+	}
+	defer db.Close()
+
+	// Test connection
+	if err := db.Ping(); err != nil {
+		log.Fatal("❌ Database ping failed:", err)
+	}
+
+	// Create migrator
+	migrator := binigo.NewMigrator(db)
+
+	// Register all migrations
+	migrations.Register(migrator)
+
+	// Run migrations
+	if err := migrator.Run(); err != nil {
+		log.Fatal("❌ Migration failed:", err)
+	}
+}
 `
 	content = fmt.Sprintf(content, projectName)
 	writeFile(filepath.Join(projectName, "main.go"), content)
@@ -213,6 +251,7 @@ go 1.21
 require (
 	github.com/Chisonm/binigo v1.0.0
 	github.com/joho/godotenv v1.5.1
+	github.com/lib/pq v1.10.9
 )
 `
 	content = fmt.Sprintf(content, projectName)
@@ -233,7 +272,7 @@ func Load() *binigo.Config {
 	// Load .env file (won't override existing environment variables)
 	_ = godotenv.Load()
 
-	return &binigo.Config{
+	cfg := &binigo.Config{
 		AppName:     getEnv("APP_NAME", "Binigo App"),
 		Environment: getEnv("APP_ENV", "development"),
 		Debug:       getEnv("APP_DEBUG", "true") == "true",
@@ -247,6 +286,16 @@ func Load() *binigo.Config {
 			Password: getEnv("DB_PASSWORD", ""),
 		},
 	}
+
+	// Build database URL
+	cfg.DatabaseURL = getEnv("DATABASE_URL", "")
+	if cfg.DatabaseURL == "" {
+		cfg.DatabaseURL = "postgres://" + cfg.Database.Username + ":" + cfg.Database.Password +
+			"@" + cfg.Database.Host + ":" + cfg.Database.Port +
+			"/" + cfg.Database.Database + "?sslmode=disable"
+	}
+
+	return cfg
 }
 
 func getEnv(key, defaultValue string) string {
@@ -746,4 +795,21 @@ func toSnakeCase(str string) string {
 
 func createLogGitkeep(projectName string) {
 	writeFile(filepath.Join(projectName, "storage", "logs", ".gitkeep"), "")
+}
+
+func createMigrationsRegister(projectName string) {
+	content := `package migrations
+
+import (
+	binigo "github.com/Chisonm/binigo/pkg"
+)
+
+// Register all migrations
+func Register(migrator *binigo.Migrator) {
+	// Register your migrations here
+	// Example:
+	// migrator.Register(&Migration20251002011617{})
+}
+`
+	writeFile(filepath.Join(projectName, "database", "migrations", "register.go"), content)
 }
