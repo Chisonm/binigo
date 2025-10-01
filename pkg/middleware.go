@@ -2,7 +2,6 @@ package binigo
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -27,7 +26,9 @@ const (
 func LoggerMiddleware() MiddlewareFunc {
 	// Setup file logger
 	logDir := "storage/logs"
-	os.MkdirAll(logDir, 0755)
+	if err := os.MkdirAll(logDir, 0755); err != nil {
+		log.Printf("Warning: Could not create log directory: %v", err)
+	}
 
 	logFile, err := os.OpenFile(
 		filepath.Join(logDir, "app.log"),
@@ -38,13 +39,8 @@ func LoggerMiddleware() MiddlewareFunc {
 		log.Printf("Warning: Could not open log file: %v", err)
 	}
 
-	// Create multi-writer for both console and file
-	var writers []io.Writer
-	writers = append(writers, os.Stdout)
-	if logFile != nil {
-		writers = append(writers, logFile)
-	}
-	multiWriter := io.MultiWriter(writers...)
+	// File logger will be used directly when needed
+	// Console output goes to os.Stdout
 
 	return func(next HandlerFunc) HandlerFunc {
 		return func(ctx *Context) error {
@@ -97,7 +93,9 @@ func LoggerMiddleware() MiddlewareFunc {
 			// Write to file (without colors) and flush immediately
 			if logFile != nil {
 				fmt.Fprintln(logFile, fileLog)
-				logFile.Sync() // Force flush to disk
+				if err := logFile.Sync(); err != nil {
+					log.Printf("Warning: Could not sync log file: %v", err)
+				}
 			}
 
 			return err
