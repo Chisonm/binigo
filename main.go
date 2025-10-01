@@ -631,6 +631,9 @@ func makeMigration(name string) {
 	// Create filename
 	filename := fmt.Sprintf("database/migrations/%s_%s.go", timestamp, migrationName)
 
+	// Extract table name from migration name
+	tableName := extractTableName(migrationName)
+
 	// Migration template
 	content := fmt.Sprintf(`package migrations
 
@@ -647,7 +650,7 @@ type Migration%s struct{}
 // Write your migration as if running on a fresh database.
 func (m *Migration%s) Up(db *sql.DB) error {
 	query := ` + "`" + `
-		CREATE TABLE example (
+		CREATE TABLE %s (
 			id SERIAL PRIMARY KEY,
 			name VARCHAR(255) NOT NULL,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -661,7 +664,7 @@ func (m *Migration%s) Up(db *sql.DB) error {
 
 // Down rolls back the migration
 func (m *Migration%s) Down(db *sql.DB) error {
-	query := ` + "`" + `DROP TABLE IF EXISTS example;` + "`" + `
+	query := ` + "`" + `DROP TABLE IF EXISTS %s;` + "`" + `
 
 	_, err := db.Exec(query)
 	return err
@@ -671,7 +674,7 @@ func (m *Migration%s) Down(db *sql.DB) error {
 func (m *Migration%s) Name() string {
 	return "%s_%s"
 }
-`, name, timestamp, timestamp, timestamp, timestamp, timestamp, name)
+`, name, timestamp, timestamp, tableName, timestamp, tableName, timestamp, timestamp, name)
 
 	// Write file
 	if err := os.WriteFile(filename, []byte(content), 0644); err != nil {
@@ -681,6 +684,54 @@ func (m *Migration%s) Name() string {
 
 	fmt.Printf("✅ Migration created: %s\n", filename)
 	fmt.Println("   Edit the Up() and Down() methods with your database changes")
+}
+
+// extractTableName extracts the table name from migration name
+// Examples:
+//   create_posts_table -> posts
+//   create_users_table -> users
+//   add_status_to_posts_table -> posts
+//   drop_comments_table -> comments
+//   alter_products_table -> products
+func extractTableName(migrationName string) string {
+	// Common patterns
+	patterns := []string{
+		"create_", "drop_", "alter_", "modify_",
+	}
+
+	name := migrationName
+
+	// Remove common prefixes
+	for _, pattern := range patterns {
+		if strings.HasPrefix(name, pattern) {
+			name = strings.TrimPrefix(name, pattern)
+			break
+		}
+	}
+
+	// Handle "add_column_to_table" or "remove_column_from_table" patterns
+	if strings.Contains(name, "_to_") {
+		parts := strings.Split(name, "_to_")
+		if len(parts) > 1 {
+			name = parts[1]
+		}
+	}
+	if strings.Contains(name, "_from_") {
+		parts := strings.Split(name, "_from_")
+		if len(parts) > 1 {
+			name = parts[1]
+		}
+	}
+
+	// Remove "_table" suffix if present
+	name = strings.TrimSuffix(name, "_table")
+
+	// If name is empty or just "table", use a generic name
+	if name == "" || name == "table" {
+		return "example"
+	}
+
+	return name
 }
 
 func migrate() {
