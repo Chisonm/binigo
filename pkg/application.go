@@ -1,7 +1,10 @@
 package binigo
 
 import (
+	"fmt"
 	"log"
+	"net"
+	"strconv"
 	"sync"
 
 	"github.com/valyala/fasthttp"
@@ -67,8 +70,53 @@ func (a *Application) Container() *Container {
 func (a *Application) Run(addr string) error {
 	handler := a.buildHandler()
 
-	log.Printf("Server starting on %s", addr)
-	return fasthttp.ListenAndServe(addr, handler)
+	// Find available port if the specified one is in use
+	finalAddr := a.findAvailablePort(addr)
+
+	log.Printf("Server starting on %s", finalAddr)
+	return fasthttp.ListenAndServe(finalAddr, handler)
+}
+
+// findAvailablePort checks if the port is available, if not, finds the next available one
+func (a *Application) findAvailablePort(addr string) string {
+	host, portStr, err := net.SplitHostPort(addr)
+	if err != nil {
+		// If no host specified, assume localhost
+		portStr = addr
+		if portStr[0] == ':' {
+			portStr = portStr[1:]
+		}
+		host = ""
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		log.Printf("Invalid port: %s, using default 8000", portStr)
+		port = 8000
+	}
+
+	// Try up to 100 ports
+	for i := 0; i < 100; i++ {
+		testPort := port + i
+		testAddr := fmt.Sprintf(":%d", testPort)
+		if host != "" {
+			testAddr = fmt.Sprintf("%s:%d", host, testPort)
+		}
+
+		// Try to listen on the port
+		ln, err := net.Listen("tcp", testAddr)
+		if err == nil {
+			ln.Close()
+			if i > 0 {
+				log.Printf("Port %d is in use, using port %d instead", port, testPort)
+			}
+			return testAddr
+		}
+	}
+
+	// If all ports are taken, return the original
+	log.Printf("Warning: Could not find available port, attempting original: %s", addr)
+	return addr
 }
 
 // buildHandler creates the main request handler with middleware chain

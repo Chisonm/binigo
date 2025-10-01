@@ -222,7 +222,7 @@ func Load() *binigo.Config {
 		AppName:     getEnv("APP_NAME", "Binigo App"),
 		Environment: getEnv("APP_ENV", "development"),
 		Debug:       getEnv("APP_DEBUG", "true") == "true",
-		Port:        getEnv("APP_PORT", "8080"),
+		Port:        getEnv("APP_PORT", "8000"),
 		Database: binigo.DatabaseConfig{
 			Driver:   getEnv("DB_DRIVER", "postgres"),
 			Host:     getEnv("DB_HOST", "localhost"),
@@ -249,7 +249,7 @@ func createEnvFile(projectName string) {
 	content := `APP_NAME=%s
 APP_ENV=development
 APP_DEBUG=true
-APP_PORT=8080
+APP_PORT=8000
 
 DB_DRIVER=postgres
 DB_HOST=localhost
@@ -401,7 +401,7 @@ cp .env.example .env
 binigo serve
 ` + "```" + `
 
-The server will start at http://localhost:8080
+The server will start at http://localhost:8000
 
 ## Project Structure
 
